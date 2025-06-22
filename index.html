@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>סימולציה פיזיקלית - כוחות וחוקי ניוטון</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>סימולציית כוחות וחוקי ניוטון</h1>
+            <p>גרור את הכוחות למקום הנכון על הגוף כך שיתקיים חוק ניוטון הראשון</p>
+        </header>
+
+        <div class="controls">
+            <!-- Horizontal tab layout -->
+            <div class="main-tabs">
+                <div class="horizontal-tab-container">
+                    <!-- Tab headers -->
+                    <div class="tab-headers">
+                        <button id="tab-surface" class="tab-header active" data-category="surface">
+                            הכוח הנורמלי
+                        </button>
+                        <button id="tab-hanging" class="tab-header" data-category="hanging">
+                            כח המתיחות
+                        </button>
+                        <button id="tab-mixed" class="tab-header" data-category="mixed">
+                            תרגול משולב
+                        </button>
+                    </div>
+                    
+                    <!-- Tab content areas -->
+                    <div class="tab-content">
+                        <!-- Surface tab content -->
+                        <div id="surface-content" class="tab-panel active">
+                            <p class="tab-description">מצאו את הכח הנורמלי הגורם לגוף להיות בהתמדה בציר האנכי</p>
+                            <div class="sub-tabs">
+                                <button id="scenario1" class="sub-tab active">שאלה 1</button>
+                                <button id="scenario2" class="sub-tab">שאלה 2</button>
+                                <button id="scenario3" class="sub-tab">שאלה 3</button>
+                                <button id="scenario4" class="sub-tab">שאלה 4</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Hanging tab content -->
+                        <div id="hanging-content" class="tab-panel">
+                            <p class="tab-description">מצאו את כח המתיחות בחוט שיגרום לגוף להיות בהתמדה בציר האנכי</p>
+                            <div class="sub-tabs">
+                                <button id="hanging1" class="sub-tab">שאלה 1</button>
+                                <button id="hanging2" class="sub-tab">שאלה 2</button>
+                                <button id="hanging3" class="sub-tab">שאלה 3</button>
+                                <button id="hanging4" class="sub-tab">שאלה 4</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Mixed tab content -->
+                        <div id="mixed-content" class="tab-panel">
+                            <p class="tab-description">בכל תרגיל, מצאו את הכח המבוקש אשר יגרום לגוף להיות בהתמדה</p>
+                            <div class="sub-tabs">
+                                <button id="mixed1" class="sub-tab">שאלה 1</button>
+                                <button id="mixed2" class="sub-tab">שאלה 2</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Compact problem info -->
+            <div class="problem-info">
+                <div class="data-section">
+                    <h3>נתונים:</h3>
+                    <div id="given-forces"></div>
+                </div>
+                <div class="options-section">
+                    <h3>בחר את הכוח החסר:</h3>
+                    <div id="force-options"></div>
+                </div>
+                <div class="instructions-section">
+                    <div class="compact-instructions">
+                        <strong>הוראות:</strong><br/>
+                        1) גרור כוח למרכז המסה<br/>
+                        2) לחץ על הכוח המוצב<br/>
+                        3) R/L לסיבוב מדויק (1°)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="simulation-area">
+            <svg id="simulation-canvas" width="800" height="400">
+                <!-- Arrow markers definitions -->
+                <defs>
+                    <!-- Red arrow for W force -->
+                    <marker id="arrowhead-ff0000" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                        <polygon points="0 0, 8 3, 0 6" fill="#ff0000" />
+                    </marker>
+                    <!-- Purple arrow for F force -->
+                    <marker id="arrowhead-880cff" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                        <polygon points="0 0, 8 3, 0 6" fill="#880cff" />
+                    </marker>
+                    <!-- Cyan arrow for N force -->
+                    <marker id="arrowhead-00f0e2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                        <polygon points="0 0, 8 3, 0 6" fill="#00f0e2" />
+                    </marker>
+                    <!-- Yellow arrow for other forces -->
+                    <marker id="arrowhead-d5a400" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                        <polygon points="0 0, 8 3, 0 6" fill="#d5a400" />
+                    </marker>
+                </defs>
+                
+                <!-- Background -->
+                <rect width="800" height="400" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+                
+                <!-- Scenario 1: Object on surface -->
+                <g id="scenario1-elements" class="scenario-group">
+                    <!-- Ground/Surface -->
+                    <line x1="50" y1="245" x2="750" y2="245" stroke="#6c757d" stroke-width="3"/>
+                    <pattern id="groundPattern" patternUnits="userSpaceOnUse" width="15" height="15">
+                        <rect width="15" height="15" fill="#e9ecef"/>
+                        <line x1="0" y1="15" x2="15" y2="0" stroke="#6c757d" stroke-width="1"/>
+                    </pattern>
+                    <rect x="50" y="245" width="700" height="20" fill="url(#groundPattern)"/>
+                    
+                    <!-- Rectangular body -->
+                    <rect id="rect-body1" x="365" y="175" width="70" height="70" fill="#007bff" stroke="#0056b3" stroke-width="2" opacity="0.8"/>
+                    <!-- Center of mass point -->
+                    <circle id="center-mass1" cx="400" cy="210" r="4" fill="#dc3545" stroke="#fff" stroke-width="2"/>
+                </g>
+
+                <!-- Scenario 2: Object on surface (same as scenario 1) -->
+                <g id="scenario2-elements" class="scenario-group" style="display: none;">
+                    <!-- Ground/Surface -->
+                    <line x1="50" y1="245" x2="750" y2="245" stroke="#6c757d" stroke-width="3"/>
+                    <rect x="50" y="245" width="700" height="20" fill="url(#groundPattern)"/>
+                    
+                    <!-- Rectangular body -->
+                    <rect id="rect-body2a" x="365" y="175" width="70" height="70" fill="#17a2b8" stroke="#138496" stroke-width="2" opacity="0.8"/>
+                    <!-- Center of mass point -->
+                    <circle id="center-mass2a" cx="400" cy="210" r="4" fill="#dc3545" stroke="#fff" stroke-width="2"/>
+                </g>
+
+                <!-- Scenario 3: Object on surface -->
+                <g id="scenario3-elements" class="scenario-group" style="display: none;">
+                    <!-- Ground/Surface -->
+                    <line x1="50" y1="245" x2="750" y2="245" stroke="#6c757d" stroke-width="3"/>
+                    <rect x="50" y="245" width="700" height="20" fill="url(#groundPattern)"/>
+                    
+                    <!-- Rectangular body -->
+                    <rect id="rect-body3" x="365" y="175" width="70" height="70" fill="#28a745" stroke="#1e7e34" stroke-width="2" opacity="0.8"/>
+                    <!-- Center of mass point -->
+                    <circle id="center-mass3" cx="400" cy="210" r="4" fill="#dc3545" stroke="#fff" stroke-width="2"/>
+                </g>
+
+                <!-- Scenario 4: Object on surface with angle reference -->
+                <g id="scenario4-elements" class="scenario-group" style="display: none;">
+                    <!-- Ground/Surface -->
+                    <line x1="50" y1="245" x2="750" y2="245" stroke="#6c757d" stroke-width="3"/>
+                    <rect x="50" y="245" width="700" height="20" fill="url(#groundPattern)"/>
+                    
+                    <!-- Rectangular body -->
+                    <rect id="rect-body4" x="365" y="175" width="70" height="70" fill="#6c757d" stroke="#495057" stroke-width="2" opacity="0.8"/>
+                    <!-- Center of mass point -->
+                    <circle id="center-mass4" cx="400" cy="210" r="4" fill="#dc3545" stroke="#fff" stroke-width="2"/>
+                    
+                    <!-- Horizontal dashed reference line through center of mass -->
+                    <line x1="320" y1="210" x2="480" y2="210" stroke="#000000" stroke-width="2" stroke-dasharray="5,5"/>
+                    
+                    <!-- Angle arc for 30 degrees -->
+                    <path d="M 430 210 A 30 30 0 0 0 426 225" stroke="#000000" stroke-width="2" fill="none"/>
+                    <!-- Angle label -->
+                    <text x="440" y="225" fill="#000000" font-size="14" text-anchor="middle" font-weight="bold">30°</text>
+                </g>
+
+                <!-- Scenario 5: Hanging object -->
+                <g id="scenario5-elements" class="scenario-group" style="display: none;">
+                    <!-- Ceiling -->
+                    <line x1="350" y1="50" x2="450" y2="50" stroke="#6c757d" stroke-width="6"/>
+                    <rect x="350" y="45" width="100" height="10" fill="#6c757d"/>
+                    
+                    <!-- Rope/String -->
+                    <line x1="400" y1="50" x2="400" y2="175" stroke="#000000" stroke-width="3"/>
+                    
+                    <!-- Hanging body -->
+                    <rect id="rect-body5" x="365" y="175" width="70" height="70" fill="#007bff" stroke="#0056b3" stroke-width="2" opacity="0.8"/>
+                    <!-- Center of mass point -->
+                    <circle id="center-mass5" cx="400" cy="210" r="4" fill="#dc3545" stroke="#fff" stroke-width="2"/>
+                </g>
+
+                <!-- Scenario 6: Hanging object with two ropes at angles -->
+                <g id="scenario6-elements" class="scenario-group" style="display: none;">
+                    <!-- Ceiling -->
+                    <line x1="100" y1="50" x2="700" y2="50" stroke="#6c757d" stroke-width="6"/>
+                    <rect x="100" y="45" width="600" height="10" fill="#6c757d"/>
+                    
+                    <!-- Left rope (150° from positive X axis) -->
+                    <line x1="123" y1="50" x2="400" y2="210" stroke="#000000" stroke-width="3"/>
+                    <!-- Right rope (30° from positive X axis) -->
+                    <line x1="677" y1="50" x2="400" y2="210" stroke="#000000" stroke-width="3"/>
+                    
+                    <!-- Hanging body -->
+                    <rect id="rect-body6" x="365" y="175" width="70" height="70" fill="#17a2b8" stroke="#138496" stroke-width="2" opacity="0.8"/>
+                    <!-- Center of mass point -->
+                    <circle id="center-mass6" cx="400" cy="210" r="4" fill="#dc3545" stroke="#fff" stroke-width="2"/>
+                    
+                    <!-- Horizontal dashed reference line through center of mass -->
+                    <line x1="320" y1="210" x2="480" y2="210" stroke="#000000" stroke-width="2" stroke-dasharray="5,5"/>
+                    
+                    <!-- Angle arcs and labels for 30 degrees on both sides -->
+                    <!-- Left side angle - arc from horizontal line to left rope (150°) -->
+                    <path d="M 370 210 A 25 25 0 0 1 385 200" stroke="#000000" stroke-width="2" fill="none"/>
+                    <text x="365" y="205" fill="#000000" font-size="12" text-anchor="middle" font-weight="bold">30°</text>
+                    
+                    <!-- Right side angle - arc from horizontal line to right rope (30°) -->
+                    <path d="M 430 210 A 25 25 0 0 0 415 200" stroke="#000000" stroke-width="2" fill="none"/>
+                    <text x="435" y="205" fill="#000000" font-size="12" text-anchor="middle" font-weight="bold">30°</text>
+                    
+                    <!-- Instruction text at bottom -->
+                    <text x="400" y="350" fill="#162e44" font-size="14" text-anchor="middle" font-weight="bold">בתרשים זה בחרו שני כוחות, וקטור כוח לכל אחד מהחוטים (בהנחה שהחוטים בעלי מתיחות זהה)</text>
+                </g>
+
+                <!-- Scenario 7: Hanging object with wall and ceiling -->
+                <g id="scenario7-elements" class="scenario-group" style="display: none;">
+                    <!-- Ceiling -->
+                    <line x1="200" y1="50" x2="700" y2="50" stroke="#6c757d" stroke-width="6"/>
+                    <rect x="200" y="45" width="500" height="10" fill="#6c757d"/>
+                    
+                    <!-- Wall (vertical, connected to ceiling) -->
+                    <line x1="200" y1="50" x2="200" y2="350" stroke="#6c757d" stroke-width="6"/>
+                    <rect x="195" y="50" width="10" height="300" fill="#6c757d"/>
+                    
+                    <!-- Horizontal rope from center of mass to wall -->
+                    <line x1="200" y1="210" x2="400" y2="210" stroke="#000000" stroke-width="3"/>
+                    
+                    <!-- Angled rope from center of mass to ceiling (36.86° from positive X axis) -->
+                    <line x1="613" y1="50" x2="400" y2="210" stroke="#000000" stroke-width="3"/>
+                    
+                    <!-- Hanging body -->
+                    <rect id="rect-body7" x="365" y="175" width="70" height="70" fill="#28a745" stroke="#1e7e34" stroke-width="2" opacity="0.8"/>
+                    <!-- Center of mass point -->
+                    <circle id="center-mass7" cx="400" cy="210" r="4" fill="#dc3545" stroke="#fff" stroke-width="2"/>
+                    
+                    <!-- Horizontal dashed reference line through center of mass -->
+                    <line x1="320" y1="210" x2="480" y2="210" stroke="#000000" stroke-width="2" stroke-dasharray="5,5"/>
+                    
+                    <!-- Angle arc and label for 36.86 degrees -->
+                    <path d="M 440 210 A 30 30 0 0 0 424 192" stroke="#000000" stroke-width="2" fill="none"/>
+                    <text x="460" y="185" fill="#000000" font-size="12" text-anchor="middle" font-weight="bold">36.86°</text>
+                    
+                    <!-- Instruction text at bottom -->
+                    <text x="400" y="350" fill="#162e44" font-size="14" text-anchor="middle" font-weight="bold">בחרו את הכוח החסר של מתיחות החוט הנטוי</text>
+                </g>
+
+                <!-- Scenario 8: Hanging object with two angled ropes -->
+                <g id="scenario8-elements" class="scenario-group" style="display: none;">
+                    <!-- Ceiling -->
+                    <line x1="200" y1="50" x2="700" y2="50" stroke="#6c757d" stroke-width="6"/>
+                    <rect x="200" y="45" width="500" height="10" fill="#6c757d"/>
+                    
+                    <!-- Wall (vertical, connected to ceiling) -->
+                    <line x1="200" y1="50" x2="200" y2="350" stroke="#6c757d" stroke-width="6"/>
+                    <rect x="195" y="50" width="10" height="300" fill="#6c757d"/>
+                    
+                    <!-- Left angled rope T2 (210° from positive X axis - 30° below negative X axis, connected to wall) -->
+                    <line x1="200" y1="310" x2="400" y2="210" stroke="#000000" stroke-width="3"/>
+                    
+                    <!-- Right angled rope T1 (53.2° from positive X axis) -->
+                    <line x1="520" y1="50" x2="400" y2="210" stroke="#000000" stroke-width="3"/>
+                    
+                    <!-- Hanging body -->
+                    <rect id="rect-body8" x="365" y="175" width="70" height="70" fill="#dc3545" stroke="#c82333" stroke-width="2" opacity="0.8"/>
+                    <!-- Center of mass point -->
+                    <circle id="center-mass8" cx="400" cy="210" r="4" fill="#dc3545" stroke="#fff" stroke-width="2"/>
+                    
+                    <!-- Horizontal dashed reference line through center of mass -->
+                    <line x1="320" y1="210" x2="480" y2="210" stroke="#000000" stroke-width="2" stroke-dasharray="5,5"/>
+                    
+                    <!-- Angle arc and label for 53.2 degrees (right rope) -->
+                    <path d="M 440 210 A 35 35 0 0 0 415 170" stroke="#000000" stroke-width="2" fill="none"/>
+                    <text x="460" y="175" fill="#000000" font-size="12" text-anchor="middle" font-weight="bold">53.2°</text>
+                    
+                    <!-- Angle arc and label for 30 degrees below horizontal (left rope) -->
+                    <path d="M 360 210 A 25 25 0 0 0 350 235" stroke="#000000" stroke-width="2" fill="none"/>
+                    <text x="340" y="230" fill="#000000" font-size="12" text-anchor="middle" font-weight="bold">30°</text>
+                    
+                    <!-- Instruction text at bottom -->
+                    <text x="400" y="350" fill="#162e44" font-size="14" text-anchor="middle" font-weight="bold">בחרו את הכוח החסר של מתיחות החוט T1</text>
+                </g>
+
+                <!-- Scenario 9: Mixed - Object on surface with horizontal rope to wall -->
+                <g id="scenario9-elements" class="scenario-group" style="display: none;">
+                    <!-- Ground/Surface -->
+                    <line x1="50" y1="215" x2="750" y2="215" stroke="#6c757d" stroke-width="3"/>
+                    <pattern id="groundPattern9" patternUnits="userSpaceOnUse" width="15" height="15">
+                        <rect width="15" height="15" fill="#e9ecef"/>
+                        <line x1="0" y1="15" x2="15" y2="0" stroke="#6c757d" stroke-width="1"/>
+                    </pattern>
+                    <rect x="50" y="215" width="700" height="20" fill="url(#groundPattern9)"/>
+                    
+                    <!-- Wall (vertical, on the left) -->
+                    <line x1="150" y1="50" x2="150" y2="350" stroke="#6c757d" stroke-width="6"/>
+                    <rect x="145" y="50" width="10" height="300" fill="#6c757d"/>
+                    
+                    <!-- Horizontal rope from center of mass to wall -->
+                    <line x1="150" y1="180" x2="400" y2="180" stroke="#000000" stroke-width="3"/>
+                    
+                    <!-- Rectangular body -->
+                    <rect id="rect-body9" x="365" y="145" width="70" height="70" fill="#6f42c1" stroke="#563d7c" stroke-width="2" opacity="0.8"/>
+                    <!-- Center of mass point -->
+                    <circle id="center-mass9" cx="400" cy="180" r="4" fill="#dc3545" stroke="#fff" stroke-width="2"/>
+                    
+                    <!-- Horizontal dashed reference line through center of mass -->
+                    <line x1="320" y1="180" x2="480" y2="180" stroke="#000000" stroke-width="2" stroke-dasharray="5,5"/>
+                    
+                    <!-- Angle arc and label for 36.86 degrees -->
+                    <path d="M 440 180 A 30 30 0 0 0 424 162" stroke="#000000" stroke-width="2" fill="none"/>
+                    <text x="460" y="155" fill="#000000" font-size="12" text-anchor="middle" font-weight="bold">36.86°</text>
+                    
+                    <!-- Instruction text at bottom right -->
+                    <text x="650" y="350" fill="#162e44" font-size="14" text-anchor="middle" font-weight="bold">בחרו את הכוח הנורמלי החסר</text>
+                </g>
+
+                <!-- Scenario 10: Mixed - Second combined exercise -->
+                <g id="scenario10-elements" class="scenario-group" style="display: none;">
+                    <!-- Ground/Surface -->
+                    <line x1="50" y1="215" x2="750" y2="215" stroke="#6c757d" stroke-width="3"/>
+                    <pattern id="groundPattern10" patternUnits="userSpaceOnUse" width="15" height="15">
+                        <rect width="15" height="15" fill="#e9ecef"/>
+                        <line x1="0" y1="15" x2="15" y2="0" stroke="#6c757d" stroke-width="1"/>
+                    </pattern>
+                    <rect x="50" y="215" width="700" height="20" fill="url(#groundPattern10)"/>
+                    
+                    <!-- Wall (vertical, on the left) -->
+                    <line x1="150" y1="50" x2="150" y2="350" stroke="#6c757d" stroke-width="6"/>
+                    <rect x="145" y="50" width="10" height="300" fill="#6c757d"/>
+                    
+                    <!-- Angled rope from center of mass to wall (143.14° from positive X axis) -->
+                    <line x1="150" y1="90" x2="400" y2="180" stroke="#000000" stroke-width="3"/>
+                    
+                    <!-- Rectangular body -->
+                    <rect id="rect-body10" x="365" y="145" width="70" height="70" fill="#28a745" stroke="#1e7e34" stroke-width="2" opacity="0.8"/>
+                    <!-- Center of mass point -->
+                    <circle id="center-mass10" cx="400" cy="180" r="4" fill="#dc3545" stroke="#fff" stroke-width="2"/>
+                    
+                    <!-- Horizontal dashed reference line through center of mass -->
+                    <line x1="320" y1="180" x2="480" y2="180" stroke="#000000" stroke-width="2" stroke-dasharray="5,5"/>
+                    
+                    <!-- Angle arc and label for 36.86 degrees (from negative X axis upward) -->
+                    <path d="M 375 180 A 20 20 0 0 1 385 165" stroke="#000000" stroke-width="2" fill="none"/>
+                    <text x="350" y="175" fill="#000000" font-size="12" text-anchor="middle" font-weight="bold">36.86°</text>
+                    
+                    <!-- Instruction text at bottom right -->
+                    <text x="650" y="350" fill="#162e44" font-size="14" text-anchor="middle" font-weight="bold">בחרו את הכוח הנורמלי החסר</text>
+                </g>
+
+                <!-- Force vectors will be dynamically added here -->
+                <g id="force-vectors"></g>
+                
+                <!-- Drop zone indicator -->
+                <circle id="drop-zone" cx="400" cy="210" r="20" fill="none" stroke="#28a745" stroke-width="2" stroke-dasharray="5,5" opacity="0" />
+                
+                <!-- Angle display for placed forces -->
+                <text id="angle-display" x="400" y="30" fill="#162e44" font-size="14" font-weight="bold" opacity="0">זווית: 0°</text>
+            </svg>
+        </div>
+
+        <div class="feedback">
+            <div id="feedback-message"></div>
+            <button id="check-answer" class="btn-check">בדקו תשובה</button>
+            <button id="reset" class="btn-reset">אפסו</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
