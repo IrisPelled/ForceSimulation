@@ -351,6 +351,15 @@ class PhysicsSimulation {
         const labelPos = this.calculateLabelPosition(centerMass, endPoint);
         text.setAttribute('x', labelPos.x);
         text.setAttribute('y', labelPos.y);
+        
+        // Update the vector arrow symbol above the letter (if it exists)
+        const arrows = vectorElement.querySelectorAll('text');
+        arrows.forEach(arrow => {
+            if (arrow.textContent === '→' || arrow.textContent.includes('→')) {
+                arrow.setAttribute('x', labelPos.x - 20);
+                arrow.setAttribute('y', labelPos.y - 12);
+            }
+        });
     }
     
     handleWheel(event) {
@@ -402,6 +411,15 @@ class PhysicsSimulation {
         const labelPos = this.calculateLabelPosition({ x: x1, y: y1 }, endPoint);
         text.setAttribute('x', labelPos.x);
         text.setAttribute('y', labelPos.y);
+        
+        // Update the vector arrow symbol above the letter (if it exists)
+        const arrows = this.ghostVector.querySelectorAll('text');
+        arrows.forEach(arrow => {
+            if (arrow.textContent === '→' || arrow.textContent.includes('→')) {
+                arrow.setAttribute('x', labelPos.x - 20);
+                arrow.setAttribute('y', labelPos.y - 12);
+            }
+        });
     }
     
     createArrowMarkers() {
